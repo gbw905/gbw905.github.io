@@ -1,0 +1,316 @@
+@@ -0,0 +1,315 @@
+<html>
+
+<head>
+<style type="text/css">
+.knitr .inline {
+  background-color: #f7f7f7;
+  border:solid 1px #B0B0B0;
+}
+.error {
+	font-weight: bold;
+	color: #FF0000;
+}
+.warning {
+	font-weight: bold;
+}
+.message {
+	font-style: italic;
+}
+.source, .output, .warning, .error, .message {
+	padding: 0 1em;
+  border:solid 1px #F7F7F7;
+}
+.source {
+  background-color: #f5f5f5;
+}
+.rimage .left {
+  text-align: left;
+}
+.rimage .right {
+  text-align: right;
+}
+.rimage .center {
+  text-align: center;
+}
+.hl.num {
+  color: #AF0F91;
+}
+.hl.str {
+  color: #317ECC;
+}
+.hl.com {
+  color: #AD95AF;
+  font-style: italic;
+}
+.hl.opt {
+  color: #000000;
+}
+.hl.std {
+  color: #585858;
+}
+.hl.kwa {
+  color: #295F94;
+  font-weight: bold;
+}
+.hl.kwb {
+  color: #B05A65;
+}
+.hl.kwc {
+  color: #55aa55;
+}
+.hl.kwd {
+  color: #BC5A65;
+  font-weight: bold;
+}
+</style>
+<title>Practical Machine Learning: Prediction Assignment Writeup</title>
+</head>
+
+<body>
+<h1>Practical Machine Learning: Prediction Assignment Writeup</h1>
+<h2>1.0 Introduction</h2>
+<h3>1.1 Purpose</h3>
+<p>To use data from accelerometers worn on the belt, forearm, arm, or dumbell of six participants to identify how well each participant performed their activity.</p>
+<h3>1.2 Background</h3>
+<p>Using devices such as Jawbone UP, Nike FuelBand, and Fitbit, it is now possible to collect a large amount of data about personal activity. Common smartphone apps enable individuals to use this data to track how much of a particular activity they perform. So far, smartphone apps are not able to track how well individuals perform their activities.</p>
+<p>In this analysis we seek to use R to categorize each individual's experience with each activity to a letter grade, analogous to grades in primary school.</p>
+<h3>1.3 R Environment</h3>
+<p>In order to complete this project, we must load the following libraries.</p>
+<div class="chunk" id="unnamed-chunk-1"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">library</span><span class="hl std">(caret)</span>
+</pre></div>
+<div class="message"><pre class="knitr r">## Loading required package: lattice
+## Loading required package: ggplot2
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl kwd">library</span><span class="hl std">(rpart)</span>
+<span class="hl kwd">library</span><span class="hl std">(rpart.plot)</span>
+<span class="hl kwd">library</span><span class="hl std">(rattle)</span>
+</pre></div>
+<div class="message"><pre class="knitr r">## Rattle: A free graphical interface for data mining with R.
+## Version 3.4.1 Copyright (c) 2006-2014 Togaware Pty Ltd.
+## Type 'rattle()' to shake, rattle, and roll your data.
+</pre></div>
+<div class="source"><pre class="knitr r"><span class="hl kwd">library</span><span class="hl std">(randomForest)</span>
+</pre></div>
+<div class="message"><pre class="knitr r">## randomForest 4.6-10
+## Type rfNews() to see new features/changes/bug fixes.
+</pre></div>
+</div></div>
+<p>In order to be able to reproduce the results on demand, we must set the 'seed' used by the random number generator (Yes, I know that means the random numbers are not really random).</p>
+<div class="chunk" id="unnamed-chunk-2"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">set.seed</span><span class="hl std">(</span><span class="hl num">1234</span><span class="hl std">)</span>
+</pre></div>
+</div></div>
+<h2>2.0 Data</h2>
+<h3>2.1 Data Sources</h3>
+<p>The 'Human Activity Recognition' (HAR) group has kindly provided the data for this project. You can read more details about this group on their <a href="http://groupware.les.inf.puc-rio.br/har">website</a>. We will load the two files, 'training' and 'testing'. Note that the 'test' file provided is intended for a test by an external party (what software developers typically call an 'acceptanct' test) and that we still need to partion the 'training' data into 'train' and'tes' partitions so that we can use ...(line truncated)...
+<div class="chunk" id="unnamed-chunk-3"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">trainUrl</span> <span class="hl kwb">&lt;-</span> <span class="hl str">&quot;http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv&quot;</span>
+<span class="hl std">testUrl</span> <span class="hl kwb">&lt;-</span> <span class="hl str">&quot;http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv&quot;</span>
+<span class="hl std">train</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">read.csv</span><span class="hl std">(</span><span class="hl kwd">url</span><span class="hl std">(trainUrl),</span> <span class="hl kwc">na.strings</span><span class="hl std">=</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;NA&quot;</span><span class="hl std">,</span><span class="hl str">&quot;#DIV/0!&quot;</span><span class="hl std">,</span><span class="hl str">&quot;&quot;</s...(line truncated)...
+<span class="hl std">test</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">read.csv</span><span class="hl std">(</span><span class="hl kwd">url</span><span class="hl std">(testUrl),</span> <span class="hl kwc">na.strings</span><span class="hl std">=</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;NA&quot;</span><span class="hl std">,</span><span class="hl str">&quot;#DIV/0!&quot;</span><span class="hl std">,</span><span class="hl str">&quot;&quot;</spa...(line truncated)...
+</pre></div>
+</div></div>
+<h3>2.2 Partition the Training Dataset</h3>
+<p>Assumption: The 'pml-testing.csv' file has been provided by an external source, to validate the analysis with a specific set of twenty test cases. Here, I partition to the 'pml-training.csv' file to create the file 'train' and 'test' files that I will use as part of developing the analysis.</p>
+<div class="chunk" id="unnamed-chunk-4"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">inTrain</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">createDataPartition</span><span class="hl std">(</span><span class="hl kwc">y</span><span class="hl std">=train</span><span class="hl opt">$</span><span class="hl std">classe,</span> <span class="hl kwc">p</span><span class="hl std">=</span><span class="hl num">0.6</span><span class="hl std">,</span> <span class="hl kwc...(line truncated)...
+<span class="hl std">myTrain</span> <span class="hl kwb">&lt;-</span> <span class="hl std">train[inTrain,]; myTest</span> <span class="hl kwb">&lt;-</span> <span class="hl std">train[</span><span class="hl opt">-</span><span class="hl std">inTrain,]</span>
+</pre></div>
+</div></div>
+<h3>2.3 Clean Training Data Partition</h3>
+<p>The device vendors did create their device log files with the intent of supplying data just to R analysis programs. As a result, we will have to 'clean' the data before we can analyze it. 'Cleaning' performs multiple functions:<ul>
+<li>Step-1 - Remove variables that cannot aid in categorizing activity performance because they have too little variance from one observation to the next
+<li>Step-2 - Remove variables that could have an accidental corelation
+<li>Step-3 - Remove variables that a majority of users do not collect, and that would therefore not provide a useful basis for categorizing future users going forward</ul>
+<p>Since this report will be publicly available on GitHub, we would also remove any personal identifying attributes (PIA), but the HAR group has already done that for us.</p>
+<p><u>Step-1: Remove NearZeroVariance variables</u><br>'Near Zero Variance variables' add nothing to the analysis because they did not change over the data collection period.</p>
+<div class="chunk" id="unnamed-chunk-5"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">NZVvars</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">names</span><span class="hl std">(myTrain)</span> <span class="hl opt">%in%</span> <span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;new_window&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;kurtosis_roll_belt&quot;</span><span class="hl std">,</span> <span class=...(line truncated)...
+                                 <span class="hl str">&quot;kurtosis_yaw_belt&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;skewness_roll_belt&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;skewness_roll_belt.1&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;skewness_yaw_belt&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;max_yaw_belt&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;min_yaw_belt&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;amplitude_yaw_belt&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;avg_roll_arm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;stddev_roll_arm&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;var_roll_arm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;avg_pitch_arm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;stddev_pitch_arm&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;var_pitch_arm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;avg_yaw_arm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;stddev_yaw_arm&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;var_yaw_arm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;kurtosis_roll_arm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;kurtosis_pitch_arm&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;kurtosis_yaw_arm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;skewness_roll_arm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;skewness_pitch_arm&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;skewness_yaw_arm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;max_roll_arm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;min_roll_arm&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;min_pitch_arm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;amplitude_role_arm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;amplitude_pitch_arm&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;kurtosis_roll_dumbbell&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;kurtosis_picth_dumbbell&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;kurtosis_yaw_dumbbell&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;skewness_roll_dumbbell&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;skewness_pitch_dumbbell&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;skewness_yaw_dumbbell&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;max_yaw_dumbbell&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;min_yaw_dumbbell&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;amplitude_yaw_dumbbell&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;kurtosis_roll_forearm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;kurtosis_picth_forearm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;kurtosis_yaw_forearm&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;skewness_roll_forearm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;skewness_pitch_forearm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;skewness_yaw_forearm&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;max_roll_forearm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;max_yaw_forearm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;min_roll_forearm&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;min_yaw_forearm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;amplitude_roll_forearm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;amplitude_yaw_forearm&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;avg_roll_forearm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;stddev_roll_forearm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;var_roll_forearm&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;avg_pitch_forearm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;stddev_pitch_forearm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;var_pitch_forearm&quot;</span><span class="hl std">,</span>
+                                 <span class="hl str">&quot;avg_yaw_forearm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;stddev_yaw_forearm&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;var_yaw_forearm&quot;</span><span class="hl std">)</span>
+<span class="hl std">myTrain</span> <span class="hl kwb">&lt;-</span> <span class="hl std">myTrain[</span><span class="hl opt">!</span><span class="hl std">NZVvars]</span>
+</pre></div>
+</div></div>
+<p><u>Step-2: Remove the ID column</u><br>The 'ID' column is a record identifier. We would not know how to interpret any relationship that the analysis may find to a generated sequence number, so we are removing the ID column from the dataset. Specifically, any relationship to ID would indicate a relationship to the order in which observations were recorded, and if such a relationship were found, that would mean we are missing at least one attribute. That would not help this analysis since we seek to assess...(line truncated)...
+<div class="chunk" id="unnamed-chunk-6"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">myTrain</span> <span class="hl kwb">&lt;-</span> <span class="hl std">myTrain[</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl opt">-</span><span class="hl num">1</span><span class="hl std">)]</span>
+</pre></div>
+</div></div>
+<p><u>Step-3: Remove columns that are 60% or more 'NA'</u><br>The course notes used 60% as an example of threshold, so I have used the same threshold. Rationale: If a majority of device users do not collect the attribute, we cannot rely on the attribute to categrize the performance of new users going forward.</p>
+<div class="chunk" id="unnamed-chunk-7"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">cntTrain</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">length</span><span class="hl std">(myTrain)</span>
+<span class="hl kwa">for</span><span class="hl std">(i</span> <span class="hl kwa">in</span> <span class="hl std">cntTrain</span><span class="hl opt">:</span><span class="hl num">1</span><span class="hl std">) {</span> <span class="hl com">#start with the last column and go forwards</span>
+    <span class="hl kwa">if</span><span class="hl std">(</span><span class="hl kwd">sum</span><span class="hl std">(</span><span class="hl kwd">is.na</span><span class="hl std">(myTrain[,i]))</span> <span class="hl opt">/</span> <span class="hl kwd">nrow</span><span class="hl std">(myTrain)</span> <span class="hl opt">&gt;=</span> <span class="hl num">0.6</span><span class="hl std">) {</span> <span class="hl com">#if more than 60% NA</span>
+        <span class="hl std">myTrain</span> <span class="hl kwb">&lt;-</span> <span class="hl std">myTrain[ ,</span> <span class="hl opt">-</span><span class="hl std">i]</span> <span class="hl com">#remove the column</span>
+    <span class="hl std">}</span>
+<span class="hl std">}</span>
+<span class="hl kwd">dim</span><span class="hl std">(myTrain)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## [1] 11776    58
+</pre></div>
+</div></div>
+<h3>2.4 Clean the Testing Partition</h3>
+<p>We now perform the same cleaning steps on the unit test data that I partitioned from the pml-training.csv file. I don't break out the steps since you have already seen them.</p>
+<div class="chunk" id="unnamed-chunk-8"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">myTest</span> <span class="hl kwb">&lt;-</span> <span class="hl std">myTest[</span><span class="hl opt">!</span><span class="hl std">NZVvars]</span> <span class="hl com">#remove variables with near zero variance</span>
+<span class="hl std">myTest</span> <span class="hl kwb">&lt;-</span> <span class="hl std">myTest[</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl opt">-</span><span class="hl num">1</span><span class="hl std">)]</span> <span class="hl com">#remove the ID column</span>
+
+<span class="hl std">cntTest</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">length</span><span class="hl std">(myTest)</span>
+<span class="hl kwa">for</span><span class="hl std">(i</span> <span class="hl kwa">in</span> <span class="hl std">cntTest</span><span class="hl opt">:</span><span class="hl num">1</span><span class="hl std">) {</span> <span class="hl com">#start with the last column and go forwards</span>
+    <span class="hl kwa">if</span><span class="hl std">(</span><span class="hl kwd">sum</span><span class="hl std">(</span><span class="hl kwd">is.na</span><span class="hl std">(myTest[,i]))</span> <span class="hl opt">/</span> <span class="hl kwd">nrow</span><span class="hl std">(myTest)</span> <span class="hl opt">&gt;=</span> <span class="hl num">0.6</span><span class="hl std">) {</span> <span class="hl com">#if more than 60% NA</span>
+        <span class="hl std">myTest</span> <span class="hl kwb">&lt;-</span> <span class="hl std">myTest[ ,</span> <span class="hl opt">-</span><span class="hl std">i]</span> <span class="hl com">#remove the column</span>
+    <span class="hl std">}</span>
+<span class="hl std">}</span>
+<span class="hl kwd">dim</span><span class="hl std">(myTest)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## [1] 7846   58
+</pre></div>
+</div></div>
+
+<h3>2.5 Clean the Acceptance Test Data Provided</h3>
+<p>In this section we clean the acceptance test data provided in the file 'pml-testing.csv'. Because this is a new dataset, there are few additional considerations:</p>
+<ul>
+<li>Step-1 - We do have to apply the same cleaning steps as we applied to the training data
+<li>Step-2 - The file 'pml-testing.csv' contains a column 'problem ID' that does not appear in the trainging data. We remove this column as the model built from the training data would not use it.
+<li>Step-3 - The R 'read.csv' process defaults the class based on the initial data values it reads for each column. This can lead to inconsistencies between different extracts from the same source, when, for example, a character field just happens to contain all numerals. For this reason, we need to check that R is able to coerce subsequent extracts from the same source to the same classes for each column. If the coercion fails, we know that the data has really changed, and our analysis does not fail just b...(line truncated)...
+</ul>
+<p><u>Step-1: Clean the 'Test' Data</u><br>We must also apply the steps applied to clean the 'Training' data, to the 'Test' data for the acceptance test.</p>
+<div class="chunk" id="unnamed-chunk-9"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">test</span> <span class="hl kwb">&lt;-</span> <span class="hl std">test[</span><span class="hl opt">!</span><span class="hl std">NZVvars]</span> <span class="hl com">#remove variables with near zero variance</span>
+<span class="hl std">test</span> <span class="hl kwb">&lt;-</span> <span class="hl std">test[</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl opt">-</span><span class="hl num">1</span><span class="hl std">)]</span> <span class="hl com">#remove the ID column</span>
+
+<span class="hl std">cntTest</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">length</span><span class="hl std">(test)</span>
+<span class="hl kwa">for</span><span class="hl std">(i</span> <span class="hl kwa">in</span> <span class="hl std">cntTest</span><span class="hl opt">:</span><span class="hl num">1</span><span class="hl std">) {</span> <span class="hl com">#start with the last column and go forwards</span>
+    <span class="hl kwa">if</span><span class="hl std">(</span><span class="hl kwd">sum</span><span class="hl std">(</span><span class="hl kwd">is.na</span><span class="hl std">(test[,i]))</span> <span class="hl opt">/</span> <span class="hl kwd">nrow</span><span class="hl std">(test)</span> <span class="hl opt">&gt;=</span> <span class="hl num">0.6</span><span class="hl std">) {</span> <span class="hl com">#if more than 60% NA</span>
+        <span class="hl std">test</span> <span class="hl kwb">&lt;-</span> <span class="hl std">test[ ,</span> <span class="hl opt">-</span><span class="hl std">i]</span> <span class="hl com">#remove the column</span>
+    <span class="hl std">}</span>
+<span class="hl std">}</span>
+</pre></div>
+</div></div>
+<p><u>Step-2: Remove 'problem ID' column</u><br>The 'Testing' dataset contains an additional column for 'problem ID' that is not part of the 'Training' dataset and that does not appear to contain information that is relevant to our analysis.</p>
+<div class="chunk" id="unnamed-chunk-10"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">test</span> <span class="hl kwb">&lt;-</span> <span class="hl std">test[</span><span class="hl opt">-</span><span class="hl kwd">length</span><span class="hl std">(test)]</span> <span class="hl com">#remove the 'problem ID' column not found in the Training dataset</span>
+</pre></div>
+</div></div>
+<p><u>Step-3: Force the 'Testing' dataset columns to have the same class as the 'Training' dataset</u><br>The RandomForest algorithm may fail on the 'Testing' dataset if the classes are not consistent with the 'Training' dataset. At a minimum, we prefer that the class coercion fail rather than the RandomForest procedure, because if the class coercion fails we know the data is really different.</p>
+<p>Assumption: The acceptance test dataset (pml-testing.csv) has the same variables, in the same order. </p>
+<div class="chunk" id="unnamed-chunk-11"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">test</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">rbind</span><span class="hl std">(myTrain[</span><span class="hl num">2</span><span class="hl std">,</span> <span class="hl opt">-</span><span class="hl num">58</span><span class="hl std">], test)</span> <span class="hl com">#rbind will throw an error if the class coercion did not work</span>
+<span class="hl std">test</span> <span class="hl kwb">&lt;-</span> <span class="hl std">test[</span><span class="hl opt">-</span><span class="hl num">1</span><span class="hl std">,]</span> <span class="hl com">#remove the row we just bound</span>
+</pre></div>
+</div></div>
+
+<h2>Apply Machine Learning</h2>
+<p>I will apply two methods of machine learning. The first, 'decision tree' is less accurate in execution but produces a useful diagram that will help readers of this report interpret the results. The second, 'random forest', is the method that will use to assess individual perormance as it is more accurate.</p>
+<h3>Decision Tree</h3>
+<p><u>Step-1: Build the Tree</u><br>I will use 'rpart', 'Recusive Partitioning and Regression Trees' package, to build the tree model and then call 'fancyRpartPlot', which is part of the 'Rattle' package, to display the tree.</p>
+
+<div class="chunk" id="unnamed-chunk-12"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">modFitTree</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">rpart</span><span class="hl std">(classe</span> <span class="hl opt">~</span> <span class="hl std">.,</span> <span class="hl kwc">data</span><span class="hl std">=myTrain,</span> <span class="hl kwc">method</span><span class="hl std">=</span><span class="hl str">&quot;class&quot;</span><span class="hl std">)</span>
+<span class="hl kwd">fancyRpartPlot</span><span class="hl std">(modFitTree)</span>
+</pre></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-12-1.png" title="plot of chunk unnamed-chunk-12" alt="plot of chunk unnamed-chunk-12" class="plot" /></div></div>
+<p><u>Step-2: Evaluate the Tree</u><br>This step is analagous to a unit test: I will calculate a prediction based on the 'myTrain' data that I earlier partioned from the 'Training' dataset, and then calculate the 'confusion matrix'.</p>
+<p>As you see in the output from the confusion matrix, the categorization of the observations in the unit test partition, based on the decision tree, is between 86.65% and 88.13% accurate. The matrix shows that even when wrong, the categorization is not very wrong for good performers: An 'A' may be categorized as a 'B' or 'C', but not as a 'D' or 'E'. However, the categorization varies more for poor performers ('D' and 'E').</p>
+<p>Conclusion: The Decision Tree based on rpart is good-enough to build a diagram that explains the categorization logic, and would be sufficiently accurate for end-users who are good athletes ('A' and 'B' performance) and just want more feedback. However, the accuracy would <u>NOT</u> be sufficient for users who really need guidance ('D' and 'E' performance) as the risk of mis-categorization is higher for poor performance than for good performance.</p>
+<div class="chunk" id="unnamed-chunk-13"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">confusionMatrix</span><span class="hl std">(</span><span class="hl kwd">predict</span><span class="hl std">(modFitTree, myTest,</span> <span class="hl kwc">type</span><span class="hl std">=</span><span class="hl str">&quot;class&quot;</span><span class="hl std">), myTest</span><span class="hl opt">$</span><span class="hl std">classe)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 2161   61    5    3    0
+##          B   50 1271   95   64    0
+##          C   21  177 1242  203   65
+##          D    0    9   19  899   92
+##          E    0    0    7  117 1285
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.8741          
+##                  95% CI : (0.8665, 0.8813)
+##     No Information Rate : 0.2845          
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+##                                           
+##                   Kappa : 0.8407          
+##  Mcnemar's Test P-Value : NA              
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.9682   0.8373   0.9079   0.6991   0.8911
+## Specificity            0.9877   0.9670   0.9281   0.9817   0.9806
+## Pos Pred Value         0.9691   0.8588   0.7272   0.8822   0.9120
+## Neg Pred Value         0.9874   0.9612   0.9795   0.9433   0.9756
+## Prevalence             0.2845   0.1935   0.1744   0.1639   0.1838
+## Detection Rate         0.2754   0.1620   0.1583   0.1146   0.1638
+## Detection Prevalence   0.2842   0.1886   0.2177   0.1299   0.1796
+## Balanced Accuracy      0.9779   0.9021   0.9180   0.8404   0.9359
+</pre></div>
+</div></div>
+<h3>Random Forest</h3>
+<p>The 'randomForest' R package implements Breiman's random forest algorithm. The code has stood the test of time: the current R package is based on Breiman and Cutler's original Fortran code for classification and regression.</p>
+<div class="chunk" id="unnamed-chunk-14"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">modFitForest</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">randomForest</span><span class="hl std">(classe</span> <span class="hl opt">~</span> <span class="hl std">.,</span> <span class="hl kwc">data</span><span class="hl std">=myTrain)</span>
+<span class="hl std">predictionsForest</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">predict</span><span class="hl std">(modFitForest, myTest,</span> <span class="hl kwc">type</span><span class="hl std">=</span><span class="hl str">&quot;class&quot;</span><span class="hl std">)</span>
+</pre></div>
+</div></div>
+<p>As you see in the output from the confusion matrix, the categorization of the observations in the unit test partition, bansed on the randomForest, is between 99.7% and 99.9% accurate. More importantly, we see from the matrix that even when wrong, the categorization is never off by more than one category -- a 'D' may be categorized as a 'C' or 'E' in a very few cases, but never more.</p>
+<p>Conclusion: People who really need guidance on their performance of exercise activities (those who score 'D' and 'E') could use the randomForest assessment to tell them for which activities they need to improve.</p>
+<div class="chunk" id="unnamed-chunk-15"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">confusionMatrix</span><span class="hl std">(predictionsForest, myTest</span><span class="hl opt">$</span><span class="hl std">classe)</span>
+</pre></div>
+<div class="output"><pre class="knitr r">## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 2232    2    0    0    0
+##          B    0 1516    4    0    0
+##          C    0    0 1362    5    0
+##          D    0    0    2 1280    0
+##          E    0    0    0    1 1442
+## 
+## Overall Statistics
+##                                         
+##                Accuracy : 0.9982        
+##                  95% CI : (0.997, 0.999)
+##     No Information Rate : 0.2845        
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16     
+##                                         
+##                   Kappa : 0.9977        
+##  Mcnemar's Test P-Value : NA            
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            1.0000   0.9987   0.9956   0.9953   1.0000
+## Specificity            0.9996   0.9994   0.9992   0.9997   0.9998
+## Pos Pred Value         0.9991   0.9974   0.9963   0.9984   0.9993
+## Neg Pred Value         1.0000   0.9997   0.9991   0.9991   1.0000
+## Prevalence             0.2845   0.1935   0.1744   0.1639   0.1838
+## Detection Rate         0.2845   0.1932   0.1736   0.1631   0.1838
+## Detection Prevalence   0.2847   0.1937   0.1742   0.1634   0.1839
+## Balanced Accuracy      0.9998   0.9990   0.9974   0.9975   0.9999
+</pre></div>
+</div></div>
+<h3>Acceptance Test</h3>
+<p>In this section, I apply the randomForest model created above to the Acceptance test data, 'pml-testing.csv', and generate the test results to be submitted, using the file creation code provided in the assignment.</p>
+<div class="chunk" id="unnamed-chunk-16"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">predictAcceptance</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">predict</span><span class="hl std">(modFitForest, test,</span> <span class="hl kwc">type</span><span class="hl std">=</span><span class="hl str">&quot;class&quot;</span><span class="hl std">)</span>
+<span class="hl std">pml_write_files</span> <span class="hl kwb">=</span> <span class="hl kwa">function</span><span class="hl std">(</span><span class="hl kwc">x</span><span class="hl std">){</span>
+    <span class="hl std">n</span> <span class="hl kwb">=</span> <span class="hl kwd">length</span><span class="hl std">(x)</span>
+    <span class="hl kwa">for</span><span class="hl std">(i</span> <span class="hl kwa">in</span> <span class="hl num">1</span><span class="hl opt">:</span><span class="hl std">n){</span>
+        <span class="hl std">filename</span> <span class="hl kwb">=</span> <span class="hl kwd">paste0</span><span class="hl std">(</span><span class="hl str">&quot;problem_id_&quot;</span><span class="hl std">,i,</span><span class="hl str">&quot;.txt&quot;</span><span class="hl std">)</span>
+        <span class="hl kwd">write.table</span><span class="hl std">(x[i],</span><span class="hl kwc">file</span><span class="hl std">=filename,</span><span class="hl kwc">quote</span><span class="hl std">=</span><span class="hl num">FALSE</span><span class="hl std">,</span><span class="hl kwc">row.names</span><span class="hl std">=</span><span class="hl num">FALSE</span><span class="hl std">,</span><span class="hl kwc">col.names</span><span class="hl std">=</span><span class="hl num">FALSE</span><span clas...(line truncated)...
+    <span class="hl std">}</span>
+<span class="hl std">}</span>
+<span class="hl kwd">pml_write_files</span><span class="hl std">(predictAcceptance)</span>
+</pre></div>
+</div></div>
+
+</body>
+</html>
