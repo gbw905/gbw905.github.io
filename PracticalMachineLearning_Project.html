@@ -1,4 +1,3 @@
-@@ -0,0 +1,315 @@
 <html>
 
 <head>
@@ -216,7 +215,7 @@
 <div class="chunk" id="unnamed-chunk-12"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">modFitTree</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">rpart</span><span class="hl std">(classe</span> <span class="hl opt">~</span> <span class="hl std">.,</span> <span class="hl kwc">data</span><span class="hl std">=myTrain,</span> <span class="hl kwc">method</span><span class="hl std">=</span><span class="hl str">&quot;class&quot;</span><span class="hl std">)</span>
 <span class="hl kwd">fancyRpartPlot</span><span class="hl std">(modFitTree)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-12-1.png" title="plot of chunk unnamed-chunk-12" alt="plot of chunk unnamed-chunk-12" class="plot" /></div></div>
+</div><div class="rimage default"><img src="https://dl.dropboxusercontent.com/u/18189100/unnamed-chunk-12-1.png" title="plot of chunk unnamed-chunk-12" alt="plot of chunk unnamed-chunk-12" class="plot" /></div></div>
 <p><u>Step-2: Evaluate the Tree</u><br>This step is analagous to a unit test: I will calculate a prediction based on the 'myTrain' data that I earlier partioned from the 'Training' dataset, and then calculate the 'confusion matrix'.</p>
 <p>As you see in the output from the confusion matrix, the categorization of the observations in the unit test partition, based on the decision tree, is between 86.65% and 88.13% accurate. The matrix shows that even when wrong, the categorization is not very wrong for good performers: An 'A' may be categorized as a 'B' or 'C', but not as a 'D' or 'E'. However, the categorization varies more for poor performers ('D' and 'E').</p>
 <p>Conclusion: The Decision Tree based on rpart is good-enough to build a diagram that explains the categorization logic, and would be sufficiently accurate for end-users who are good athletes ('A' and 'B' performance) and just want more feedback. However, the accuracy would <u>NOT</u> be sufficient for users who really need guidance ('D' and 'E' performance) as the risk of mis-categorization is higher for poor performance than for good performance.</p>
